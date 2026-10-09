@@ -1,10 +1,12 @@
 
 name: Build KoreaTrip Android
+
 on:
   workflow_dispatch:
   push:
     paths:
       - "koreatrip-android-project.zip"
+      - ".github/workflows/build-android.yml"
 
 permissions:
   contents: read
@@ -12,35 +14,61 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -e
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
+      - name: Check project archive
+        run: |
+          test -f koreatrip-android-project.zip
+          unzip -l koreatrip-android-project.zip | head -n 40
+
       - name: Extract Android project
-        run: unzip -o koreatrip-android-project.zip
+        run: |
+          unzip -o koreatrip-android-project.zip
+          ls -la
+          test -d koreatrip-android
 
       - name: Build Android app
         working-directory: koreatrip-android
         run: gradle --no-daemon bundleRelease
 
+      - name: Find AAB
+        run: |
+          find koreatrip-android -type f -name "*.aab" -print
+
       - name: Save AAB file
         uses: actions/upload-artifact@v4
         with:
           name: KoreaTrip-Android-AAB
-          path: koreatrip-android/app/build/outputs/bundle/release/*.aab
+          path: koreatrip-android/**/*.aab
           if-no-files-found: error
           retention-days: 14
