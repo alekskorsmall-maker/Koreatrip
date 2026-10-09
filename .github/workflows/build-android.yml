@@ -26,14 +26,16 @@ jobs:
 
       
       
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK packages
+      
+      - name: Install Android SDK packages
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-35"
-          sdkmanager "build-tools;35.0.0"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platform-tools"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "platforms;android-35"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" "build-tools;35.0.0"
+
 
 
 
