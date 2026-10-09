@@ -14,7 +14,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -26,15 +25,10 @@ jobs:
           java-version: "17"
 
       - name: Install Android SDK packages
-        shell: bash
         run: |
           set -e
-          echo "ANDROID_HOME=$ANDROID_HOME"
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found"
-            exit 1
-          fi
+          test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
             "platform-tools" \
@@ -46,29 +40,27 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Check project archive
-        run: |
-          test -f koreatrip-android-project.zip
-          unzip -l koreatrip-android-project.zip | head -n 40
-
       - name: Extract Android project
         run: |
           unzip -o koreatrip-android-project.zip
-          ls -la
           test -d koreatrip-android
 
-      - name: Build Android app
+      - name: Build APK and AAB
         working-directory: koreatrip-android
-        run: gradle --no-daemon bundleRelease
+        run: gradle --no-daemon assembleRelease bundleRelease
 
-      - name: Find AAB
-        run: |
-          find koreatrip-android -type f -name "*.aab" -print
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KoreaTrip-Android-APK
+          path: koreatrip-android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Save AAB file
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: KoreaTrip-Android-AAB
-          path: koreatrip-android/**/*.aab
+          path: koreatrip-android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 14
