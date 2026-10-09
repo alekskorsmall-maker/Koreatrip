@@ -1,5 +1,5 @@
 
-name: Build KoreaTrip Android
+name: Build KoreaTrip APK
 
 on:
   workflow_dispatch:
@@ -24,43 +24,35 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Android SDK packages
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
         run: |
-          set -e
-          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
-          test -n "$SDKMANAGER"
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
-          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      - name: Extract Android project
+      - name: Extract project
         run: |
           unzip -o koreatrip-android-project.zip
           test -d koreatrip-android
 
-      - name: Build APK and AAB
+      - name: Build debug APK
         working-directory: koreatrip-android
-        run: gradle --no-daemon assembleRelease bundleRelease
+        run: |
+          gradle --no-daemon assembleDebug
+          ls -lh app/build/outputs/apk/debug/
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          test "$(stat -c%s app/build/outputs/apk/debug/app-debug.apk)" -gt 100000
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KoreaTrip-Android-APK
-          path: koreatrip-android/app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: KoreaTrip-Android-AAB
-          path: koreatrip-android/app/build/outputs/bundle/release/*.aab
+          name: KoreaTrip-APK
+          path: koreatrip-android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
