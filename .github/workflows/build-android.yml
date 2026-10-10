@@ -41,13 +41,13 @@ jobs:
 
       - name: Build APK and AAB
         working-directory: koreatrip-android
-        run: gradle --no-daemon assembleRelease bundleRelease
+        run: gradle --no-daemon assembleDebug bundleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: KoreaTrip-Android-APK
-          path: koreatrip-android/app/build/outputs/apk/release/*.apk
+          path: koreatrip-android/app/ build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
