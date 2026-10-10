@@ -39,9 +39,11 @@ jobs:
           unzip -o koreatrip-android-project.zip
           test -d koreatrip-android
 
-      - name: Build APK and AAB
-        working-directory: koreatrip-android
-        run: gradle --no-daemon assembleDebug bundleRelease
+      - name: Build APK and AAB 
+      working-directory: 
+      koreatrip-android 
+run: gradle --no-daemon 
+assembleDebug bundleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -51,10 +53,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: KoreaTrip-Android-APK
-          path: koreatrip-android/app/build/outputs/apk/**/*.apk
-          if-no-files-found: error
-          retention-days: 14
+      - name: Upload APK 
+uses: 
+actions/upload-artifact@v4 
+with: 
+name: 
+KoreaTrip-Android-APK 
+path: 
+koreatrip-android/app/build/ 
+outputs/apk/ debug/*.apk 
+if-no-files-found: 
+error 
+retention-days: 14
